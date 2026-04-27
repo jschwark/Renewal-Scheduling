@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Q2 Renewal Scheduling Tracker</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f5f5f3;color:#1a1a1a;min-height:100vh;}
+.container{max-width:780px;margin:2rem auto;background:#fff;border-radius:16px;border:1px solid #e0ddd6;overflow:hidden;}
+.header{padding:1.25rem 1.25rem 0.75rem;border-bottom:1px solid #e0ddd6;}
+.badge{font-size:11px;padding:3px 8px;border-radius:8px;display:inline-block;}
+.badge-progress{background:#E6F1FB;color:#185FA5;}
+.badge-done{background:#E1F5EE;color:#0F6E56;}
+.badge-alert{background:#FCEBEB;color:#A32D2D;}
+.badge-warn{background:#FAEEDA;color:#854F0B;}
+.summary-bar{display:flex;gap:12px;padding:0.75rem 1.25rem;background:#f5f5f3;border-bottom:1px solid #e0ddd6;}
+.s-chip{display:flex;flex-direction:column;align-items:center;flex:1;}
+.s-val{font-size:18px;font-weight:500;color:#1a1a1a;}
+.s-lbl{font-size:10px;color:#666;margin-top:1px;}
+.tabs{display:flex;gap:4px;padding:0.75rem 1.25rem 0;border-bottom:1px solid #e0ddd6;}
+.tab{font-size:13px;padding:6px 14px;border-radius:8px;border:1px solid transparent;cursor:pointer;background:transparent;color:#666;}
+.tab.active{background:#f5f5f3;border-color:#ccc;color:#1a1a1a;font-weight:500;}
+.search-bar{padding:0.75rem 1.25rem;display:flex;align-items:center;gap:8px;}
+.search-bar input{flex:1;font-size:13px;padding:7px 10px;border-radius:8px;border:1px solid #ddd;outline:none;background:#fff;color:#1a1a1a;}
+.search-bar input:focus{border-color:#999;}
+.sort-sel{font-size:12px;padding:7px 10px;border-radius:8px;border:1px solid #ddd;background:#fff;color:#1a1a1a;cursor:pointer;}
+.rep-list{padding:0 1.25rem 1.25rem;display:flex;flex-direction:column;gap:8px;}
+.rep-card{background:#fff;border:1px solid #e0ddd6;border-radius:12px;padding:12px 14px;cursor:pointer;transition:border-color 0.15s;}
+.rep-card:hover{border-color:#aaa;}
+.rep-card.done{border-left:3px solid #1D9E75;}
+.rep-card.alert{border-left:3px solid #E24B4A;}
+.rep-top{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.rep-avatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;flex-shrink:0;}
+.rep-name{font-size:14px;font-weight:500;color:#1a1a1a;flex:1;}
+.prog-row{display:flex;align-items:center;gap:8px;}
+.prog-track{flex:1;height:6px;background:#eee;border-radius:3px;overflow:hidden;}
+.prog-fill{height:100%;border-radius:3px;}
+.prog-label{font-size:11px;color:#888;min-width:36px;text-align:right;}
+.week-grid{display:none;margin-top:10px;padding-top:10px;border-top:1px solid #eee;}
+.week-grid.open{display:block;}
+.week-cols{display:flex;gap:4px;overflow-x:auto;padding-bottom:4px;}
+.week-col{min-width:58px;text-align:center;flex-shrink:0;}
+.week-label{font-size:10px;color:#888;margin-bottom:4px;line-height:1.3;}
+.week-bar-wrap{height:48px;display:flex;align-items:flex-end;justify-content:center;}
+.week-bar{width:32px;border-radius:3px 3px 0 0;min-height:2px;}
+.week-count{font-size:11px;color:#888;margin-top:2px;}
+.stats-row{display:flex;gap:8px;margin-top:8px;}
+.stat-chip{flex:1;background:#f5f5f3;border-radius:8px;padding:6px 8px;text-align:center;}
+.stat-chip .val{font-size:16px;font-weight:500;color:#1a1a1a;}
+.stat-chip .lbl{font-size:10px;color:#888;margin-top:1px;}
+.footer{padding:0.75rem 1.25rem;border-top:1px solid #e0ddd6;font-size:11px;color:#aaa;text-align:center;}
+@media(max-width:600px){
+  .summary-bar{flex-wrap:wrap;}
+  .s-chip{min-width:30%;}
+  .container{margin:0;border-radius:0;}
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<div class="header">
+  <div style="display:flex;align-items:center;gap:10px;">
+    <div style="font-size:20px;font-weight:500;color:#1a1a1a;">Q2 Renewal Scheduling</div>
+    <span class="badge badge-progress">As of Apr 27, 2026</span>
+  </div>
+  <div style="font-size:13px;color:#666;margin-top:4px;">Schedule all your opps → earn prize eligibility 🏆</div>
+</div>
+
+<div id="summary-bar" class="summary-bar"></div>
+
+<div class="tabs">
+  <button class="tab active" onclick="setTab('all',this)">All reps</button>
+  <button class="tab" onclick="setTab('done',this)">100% done</button>
+  <button class="tab" onclick="setTab('needs',this)">Needs attention</button>
+</div>
+
+<div class="search-bar">
+  <input type="text" id="search" placeholder="Search rep..." oninput="render()" />
+  <select class="sort-sel" id="sort-sel" onchange="render()">
+    <option value="pct-desc">% scheduled ↓</option>
+    <option value="pct-asc">% scheduled ↑</option>
+    <option value="name">Name A–Z</option>
+    <option value="remaining-desc">Most remaining</option>
+  </select>
+</div>
+
+<div class="rep-list" id="rep-list"></div>
+
+<div class="footer">Generated Apr 27, 2026 · Q2 Opps Salesforce Report · James Schwark</div>
+</div>
+
+<script>
+const RAW = [{"name":"Anna Talbot","total":12,"scheduled":9,"not_scheduled":3,"needs_reschedule":0,"weeks":{"2026-04-27":2,"2026-05-04":0,"2026-05-11":1,"2026-05-18":0,"2026-05-25":2,"2026-06-01":1,"2026-06-08":0,"2026-06-15":0,"2026-06-22":1,"2026-06-29":0,"2026-07-06":0,"2026-07-13":0,"2026-07-20":0}},{"name":"Caroline Culpepper","total":1,"scheduled":0,"not_scheduled":1,"needs_reschedule":0,"weeks":{}},{"name":"Chase Pilawski","total":11,"scheduled":4,"not_scheduled":7,"needs_reschedule":0,"weeks":{"2026-04-27":0,"2026-05-04":0,"2026-05-11":0,"2026-05-18":0,"2026-05-25":0,"2026-06-01":0,"2026-06-08":1,"2026-06-15":1,"2026-06-22":1,"2026-06-29":0,"2026-07-06":0,"2026-07-13":0,"2026-07-20":0}},{"name":"Christopher Rodman","total":26,"scheduled":14,"not_scheduled":12,"needs_reschedule":0,"weeks":{"2026-04-27":2,"2026-05-04":0,"2026-05-11":1,"2026-05-18":0,"2026-05-25":1,"2026-06-01":1,"2026-06-08":0,"2026-06-15":6,"2026-06-22":0,"2026-06-29":1,"2026-07-06":0,"2026-07-13":0,"2026-07-20":0}},{"name":"Clare Elizabeth Kingsley Ms.","total":21,"scheduled":3,"not_scheduled":18,"needs_reschedule":0,"weeks":{"2026-04-27":1,"2026-05-04":0,"2026-05-11":0,"2026-05-18":0,"2026-05-25":0,"2026-06-01":1,"2026-06-08":0,"2026-06-15":0,"2026-06-22":0,"2026-06-29":0,"2026-07-06":0,"2026-07-13":0,"2026-07-20":0}},{"name":"Connor E Sokal","total":1,"scheduled":0,"not_scheduled":1,"needs_reschedule":0,"weeks":{}},{"name":"Conor Iannuzo","total":17,"scheduled":13,"not_scheduled":4,"needs_reschedule":0,"weeks":{"2026-04-27":0,"2026-05-04":0,"2026-05-11":2,"2026-05-18":2,"2026-05-25":0,"2026-06-01":2,"2026-06-08":0,"2026-06-15":4,"2026-06-22":2,"2026-06-29":0,"2026-07-06":0,"2026-07-13":0,"2026-07-20":0}},{"name":"Curtis Vivian","total":30,"scheduled":7,"not_scheduled":23,"needs_reschedule":0,"weeks":{"2026-04-27":3,"2026-05-04":1,"2026-05-11":0,"2026-05-18":0,"2026-05-25":0,"2026-06-01":2,"2026-06-08":0,"2026-06-15":0,"2026-06-22":0,"2026-06-29":0,"2026-07-06":0,"2026-07-13":0,"2026-07-20":1}},{"name":"Dyne Smith","total":26,"scheduled":12,"not_scheduled":12,"needs_reschedule":2,"weeks":{"2026-04-27":1,"2026-05-04":2,"2026-05-11":2,"2026-05-18":0,"2026-05-25":1,"2026-06-01":1,"2026-06-08":1,"2026-06-15":2,"2026-06-22":0,"2026-06-29":1,"2026-07-06":0,"2026-07-13":0,"2026-07-20":0}},{"name":"Elizabeth Sodoma","total":12,"scheduled":2,"not_scheduled":10,"needs_reschedule":0,"weeks":{"2026-04-27":0,"2026-05-04":0,"2026-05-11":0,"2026-05-18":0,"2026-05-25":0,"2026-06-01":0,"2026-06-08":0,"2026-06-15":0,"2026-06-22":1,"2026-06-29":1,"2026-07-06":0,"2026-07-13":0,"2026-07-20":0}},{"name":"Ellie Vaughn","total":26,"scheduled":17,"not_scheduled":9,"needs_reschedule":0,"weeks":{"2026-04-27":4,"2026-05-04":2,"2026-05-11":5,"2026-05-18":0,"2026-05-25":3,"2026-06-01":1,"2026-06-08":0,"2026-06-15":2,"2026-06-22":0,"2026-06-29":0,"2026-07-06":0,"2026-07-13":0,"2026-07-20":0}},{"name":"Emily McDonough","total":29,"scheduled":12,"not_scheduled":17,"needs_reschedule":0,"weeks":{"2026-04-27":1,"2026-05-04":0,"2026-05-11":0,"2026-05-18":2,"2026-05-25":0,"2026-06-01":1,"2026-06-08":2,"2026-06-15":2,"2026-06-22":3,"2026-06-29":0,"2026-07-06":0,"2026-07-13":0,"2026-07-20":0}},{"name":"Grace White","total":15,"scheduled":1,"not_scheduled":14,"needs_reschedule":0,"weeks":{"2026-04-27":0,"2026-05-04":1,"2026-05-11":0,"2026-05-18":0,"2026-05-25":0,"2026-06-01":0,"2026-06-08":0,"2026-06-15":0,"2026-06-22":0,"2026-06-29":0,"2026-07-06":0,"2026-07-13":0,"2026-07-20":0}},{"name":"Hannah Hawkins","total":12,"scheduled":7,"not_scheduled":5,"needs_reschedule":0,"weeks":{"2026-04-27":0,"2026-05-04":0,"2026-05-11":1,"2026-05-18":0,"2026-05-25":3,"2026-06-01":2,"2026-06-08":0,"2026-06-15":0,"2026-06-22":0,"2026-06-29":0,"2026-07-06":0,"2026-07-13":0,"2026-07-20":0}},{"name":"Hazel Williams","total":26,"scheduled":19,"not_scheduled":7,"needs_reschedule":0,"weeks":{"2026-04-27":2,"2026-05-04":1,"2026-05-11":2,"2026-05-18":0,"2026-05-25":0,"2026-06-01":5,"2026-06-08":0,"2026-06-15":2,"2026-06-22":2,"2026-06-29":2,"2026-07-06":1,"2026-07-13":0,"2026-07-20":1}},{"name":"James Gruening","total":34,"scheduled":7,"not_scheduled":27,"needs_reschedule":0,"weeks":{"2026-04-27":0,"2026-05-04":3,"2026-05-11":1,"2026-05-18":2,"2026-05-25":0,"2026-06-01":0,"2026-06-08":0,"2026-06-15":0,"2026-06-22":1,"2026-06-29":0,"2026-07-06":0,"2026-07-13":0,"2026-07-20":0}},{"name":"James Schwark","total":21,"scheduled":1,"not_scheduled":20,"needs_reschedule":0,"weeks":{"2026-04-27":1,"2026-05-04":0,"2026-05-11":0,"2026-05-18":0,"2026-05-25":0,"2026-06-01":0,"2026-06-08":0,"2026-06-15":0,"2026-06-22":0,"2026-06-29":0,"2026-07-06":0,"2026-07-13":0,"2026-07-20":0}},{"name":"Jessica Balch","total":29,"scheduled":17,"not_scheduled":12,"needs_reschedule":0,"weeks":{"2026-04-27":0,"2026-05-04":5,"2026-05-11":1,"2026-05-18":1,"2026-05-25":0,"2026-06-01":0,"2026-06-08":6,"2026-06-15":1,"2026-06-22":1,"2026-06-29":0,"2026-07-06":1,"2026-07-13":0,"2026-07-20":0}},{"name":"Jonathan Zongor","total":18,"scheduled":7,"not_scheduled":11,"needs_reschedule":0,"weeks":{"2026-04-27":1,"2026-05-04":4,"2026-05-11":1,"2026-05-18":0,"2026-05-25":0,"2026-06-01":1,"2026-06-08":0,"2026-06-15":0,"2026-06-22":0,"2026-06-29":0,"2026-07-06":0,"2026-07-13":0,"2026-07-20":0}},{"name":"Jordan Spillers","total":24,"scheduled":10,"not_scheduled":14,"needs_reschedule":0,"weeks":{"2026-04-27":0,"2026-05-04":4,"2026-05-11":1,"2026-05-18":1,"2026-05-25":2,"2026-06-01":0,"2026-06-08":1,"2026-06-15":0,"2026-06-22":0,"2026-06-29":0,"2026-07-06":1,"2026-07-13":0,"2026-07-20":0}},{"name":"Joshua Spencer","total":26,"scheduled":6,"not_scheduled":20,"needs_reschedule":0,"weeks":{"2026-04-27":2,"2026-05-04":1,"2026-05-11":2,"2026-05-18":1,"2026-05-25":0,"2026-06-01":0,"2026-06-08":0,"2026-06-15":0,"2026-06-22":0,"2026-06-29":0,"2026-07-06":0,"2026-07-13":0,"2026-07-20":0}},{"name":"Kait Ericksen","total":26,"scheduled":20,"not_scheduled":6,"needs_reschedule":0,"weeks":{"2026-04-27":2,"2026-05-04":1,"2026-05-11":2,"2026-05-18":1,"2026-05-25":0,"2026-06-01":2,"2026-06-08":1,"2026-06-15":0,"2026-06-22":4,"2026-06-29":2,"2026-07-06":2,"2026-07-13":1,"2026-07-20":2}},{"name":"Kathryn Kozlowski","total":20,"scheduled":5,"not_scheduled":15,"needs_reschedule":0,"weeks":{"2026-04-27":1,"2026-05-04":1,"2026-05-11":0,"2026-05-18":0,"2026-05-25":1,"2026-06-01":0,"2026-06-08":0,"2026-06-15":1,"2026-06-22":0,"2026-06-29":0,"2026-07-06":0,"2026-07-13":0,"2026-07-20":0}},{"name":"Krystina Sophia Okolita","total":11,"scheduled":3,"not_scheduled":3,"needs_reschedule":5,"weeks":{"2026-04-27":0,"2026-05-04":2,"2026-05-11":0,"2026-05-18":1,"2026-05-25":0,"2026-06-01":0,"2026-06-08":0,"2026-06-15":0,"2026-06-22":0,"2026-06-29":0,"2026-07-06":0,"2026-07-13":0,"2026-07-20":0}},{"name":"Kyle Steele","total":2,"scheduled":0,"not_scheduled":2,"needs_reschedule":0,"weeks":{}},{"name":"Lauren Gambit","total":21,"scheduled":8,"not_scheduled":12,"needs_reschedule":1,"weeks":{"2026-04-27":2,"2026-05-04":1,"2026-05-11":4,"2026-05-18":0,"2026-05-25":0,"2026-06-01":0,"2026-06-08":0,"2026-06-15":0,"2026-06-22":0,"2026-06-29":0,"2026-07-06":0,"2026-07-13":0,"2026-07-20":0}},{"name":"Lauren Johnson","total":27,"scheduled":11,"not_scheduled":16,"needs_reschedule":0,"weeks":{"2026-04-27":1,"2026-05-04":5,"2026-05-11":1,"2026-05-18":0,"2026-05-25":1,"2026-06-01":0,"2026-06-08":0,"2026-06-15":0,"2026-06-22":0,"2026-06-29":1,"2026-07-06":1,"2026-07-13":0,"2026-07-20":0}},{"name":"Lischna Castor","total":25,"scheduled":18,"not_scheduled":7,"needs_reschedule":0,"weeks":{"2026-04-27":2,"2026-05-04":1,"2026-05-11":2,"2026-05-18":1,"2026-05-25":2,"2026-06-01":1,"2026-06-08":1,"2026-06-15":1,"2026-06-22":1,"2026-06-29":1,"2026-07-06":2,"2026-07-13":0,"2026-07-20":0}},{"name":"Madison Corcoran","total":13,"scheduled":6,"not_scheduled":7,"needs_reschedule":0,"weeks":{"2026-04-27":0,"2026-05-04":3,"2026-05-11":0,"2026-05-18":1,"2026-05-25":0,"2026-06-01":1,"2026-06-08":0,"2026-06-15":0,"2026-06-22":0,"2026-06-29":0,"2026-07-06":0,"2026-07-13":0,"2026-07-20":0}},{"name":"Maeve Hourihan","total":22,"scheduled":7,"not_scheduled":15,"needs_reschedule":0,"weeks":{"2026-04-27":0,"2026-05-04":0,"2026-05-11":0,"2026-05-18":0,"2026-05-25":0,"2026-06-01":0,"2026-06-08":1,"2026-06-15":0,"2026-06-22":0,"2026-06-29":0,"2026-07-06":0,"2026-07-13":0,"2026-07-20":0}},{"name":"Maura Records","total":25,"scheduled":11,"not_scheduled":14,"needs_reschedule":0,"weeks":{"2026-04-27":4,"2026-05-04":0,"2026-05-11":2,"2026-05-18":1,"2026-05-25":0,"2026-06-01":0,"2026-06-08":3,"2026-06-15":0,"2026-06-22":0,"2026-06-29":0,"2026-07-06":1,"2026-07-13":0,"2026-07-20":0}},{"name":"Michael Jacobs","total":35,"scheduled":23,"not_scheduled":12,"needs_reschedule":0,"weeks":{"2026-04-27":3,"2026-05-04":4,"2026-05-11":4,"2026-05-18":1,"2026-05-25":2,"2026-06-01":2,"2026-06-08":0,"2026-06-15":3,"2026-06-22":0,"2026-06-29":0,"2026-07-06":1,"2026-07-13":0,"2026-07-20":0}},{"name":"Mohammadreza Katouli","total":21,"scheduled":5,"not_scheduled":16,"needs_reschedule":0,"weeks":{"2026-04-27":2,"2026-05-04":0,"2026-05-11":0,"2026-05-18":1,"2026-05-25":0,"2026-06-01":0,"2026-06-08":0,"2026-06-15":0,"2026-06-22":0,"2026-06-29":1,"2026-07-06":0,"2026-07-13":0,"2026-07-20":0}},{"name":"Nicole Stam","total":7,"scheduled":3,"not_scheduled":4,"needs_reschedule":0,"weeks":{"2026-04-27":0,"2026-05-04":1,"2026-05-11":1,"2026-05-18":0,"2026-05-25":0,"2026-06-01":0,"2026-06-08":0,"2026-06-15":0,"2026-06-22":0,"2026-06-29":0,"2026-07-06":0,"2026-07-13":0,"2026-07-20":0}},{"name":"Quinn Melidona","total":29,"scheduled":16,"not_scheduled":11,"needs_reschedule":2,"weeks":{"2026-04-27":1,"2026-05-04":5,"2026-05-11":1,"2026-05-18":3,"2026-05-25":3,"2026-06-01":1,"2026-06-08":0,"2026-06-15":0,"2026-06-22":2,"2026-06-29":0,"2026-07-06":0,"2026-07-13":0,"2026-07-20":0}},{"name":"Ryan Gross","total":1,"scheduled":0,"not_scheduled":1,"needs_reschedule":0,"weeks":{}},{"name":"Samantha Bellisario","total":26,"scheduled":11,"not_scheduled":15,"needs_reschedule":0,"weeks":{"2026-04-27":1,"2026-05-04":0,"2026-05-11":0,"2026-05-18":2,"2026-05-25":1,"2026-06-01":0,"2026-06-08":1,"2026-06-15":0,"2026-06-22":0,"2026-06-29":0,"2026-07-06":0,"2026-07-13":0,"2026-07-20":0}},{"name":"Sammy Miller","total":28,"scheduled":17,"not_scheduled":11,"needs_reschedule":0,"weeks":{"2026-04-27":0,"2026-05-04":2,"2026-05-11":1,"2026-05-18":1,"2026-05-25":2,"2026-06-01":2,"2026-06-08":2,"2026-06-15":1,"2026-06-22":1,"2026-06-29":1,"2026-07-06":2,"2026-07-13":1,"2026-07-20":0}},{"name":"Trevor Switala","total":25,"scheduled":15,"not_scheduled":10,"needs_reschedule":0,"weeks":{"2026-04-27":4,"2026-05-04":4,"2026-05-11":2,"2026-05-18":1,"2026-05-25":0,"2026-06-01":2,"2026-06-08":1,"2026-06-15":1,"2026-06-22":0,"2026-06-29":0,"2026-07-06":0,"2026-07-13":0,"2026-07-20":0}}];
+
+const WEEK_KEYS = ["2026-04-27","2026-05-04","2026-05-11","2026-05-18","2026-05-25","2026-06-01","2026-06-08","2026-06-15","2026-06-22","2026-06-29","2026-07-06","2026-07-13","2026-07-20"];
+const WEEK_LABELS = ["Apr 27","May 4","May 11","May 18","May 25","Jun 1","Jun 8","Jun 15","Jun 22","Jun 29","Jul 6","Jul 13","Jul 20"];
+const AVATAR_COLORS = [
+  {bg:'#E6F1FB',fg:'#185FA5'},{bg:'#E1F5EE',fg:'#0F6E56'},{bg:'#EEEDFE',fg:'#534AB7'},
+  {bg:'#FAEEDA',fg:'#854F0B'},{bg:'#FBEAF0',fg:'#993556'},{bg:'#FAECE7',fg:'#993C1D'}
+];
+
+let currentTab = 'all';
+let openCards = new Set();
+
+function initials(name){
+  const parts = name.split(' ').filter(p=>p&&p!=='Ms.'&&p!=='Mr.');
+  return (parts[0][0]+(parts[1]?parts[1][0]:'')).toUpperCase();
+}
+function pct(r){ return r.total>0?Math.round(r.scheduled/r.total*100):0; }
+
+function setTab(t,el){
+  currentTab=t;
+  document.querySelectorAll('.tab').forEach(e=>e.classList.remove('active'));
+  el.classList.add('active');
+  render();
+}
+
+function buildSummary(){
+  const totalReps=RAW.length;
+  const doneReps=RAW.filter(r=>pct(r)===100).length;
+  const totalOpps=RAW.reduce((a,r)=>a+r.total,0);
+  const totalSched=RAW.reduce((a,r)=>a+r.scheduled,0);
+  const needsAlert=RAW.filter(r=>r.needs_reschedule>0).length;
+  document.getElementById('summary-bar').innerHTML=`
+    <div class="s-chip"><div class="s-val">${doneReps}</div><div class="s-lbl">reps at 100%</div></div>
+    <div class="s-chip"><div class="s-val">${totalReps}</div><div class="s-lbl">total reps</div></div>
+    <div class="s-chip"><div class="s-val">${totalSched}/${totalOpps}</div><div class="s-lbl">opps scheduled</div></div>
+    <div class="s-chip"><div class="s-val">${Math.round(totalSched/totalOpps*100)}%</div><div class="s-lbl">team progress</div></div>
+    <div class="s-chip"><div class="s-val" style="color:#A32D2D;">${needsAlert}</div><div class="s-lbl">need reschedule</div></div>`;
+}
+
+function renderWeeks(rep){
+  const mx=Math.max(...WEEK_KEYS.map(k=>rep.weeks[k]||0),1);
+  const cols=WEEK_KEYS.map((k,i)=>{
+    const v=rep.weeks[k]||0;
+    const h=Math.max(4,Math.round((v/mx)*44));
+    const isCur=k==='2026-04-27';
+    const barColor=isCur?'#378ADD':'#1D9E75';
+    return `<div class="week-col">
+      <div class="week-label">${WEEK_LABELS[i]}</div>
+      <div class="week-bar-wrap"><div class="week-bar" style="height:${h}px;background:${v>0?barColor:'#eee'}"></div></div>
+      <div class="week-count">${v>0?v:''}</div>
+    </div>`;
+  }).join('');
+  return `<div class="week-grid${openCards.has(rep.name)?' open':''}">
+    <div style="font-size:11px;color:#888;margin-bottom:6px;">Scheduled per week (future)</div>
+    <div class="week-cols">${cols}</div>
+  </div>`;
+}
+
+function toggleCard(name){
+  if(openCards.has(name)) openCards.delete(name);
+  else openCards.add(name);
+  render();
+}
+
+function render(){
+  const q=document.getElementById('search').value.toLowerCase();
+  const sort=document.getElementById('sort-sel').value;
+  let data=RAW.filter(r=>{
+    if(q&&!r.name.toLowerCase().includes(q)) return false;
+    if(currentTab==='done') return pct(r)===100;
+    if(currentTab==='needs') return r.needs_reschedule>0||pct(r)<30;
+    return true;
+  });
+  data=data.slice().sort((a,b)=>{
+    if(sort==='pct-desc') return pct(b)-pct(a);
+    if(sort==='pct-asc') return pct(a)-pct(b);
+    if(sort==='name') return a.name.localeCompare(b.name);
+    if(sort==='remaining-desc') return(b.not_scheduled+b.needs_reschedule)-(a.not_scheduled+a.needs_reschedule);
+    return 0;
+  });
+  const list=document.getElementById('rep-list');
+  list.innerHTML=data.map((r,idx)=>{
+    const p=pct(r);
+    const isDone=p===100;
+    const hasAlert=r.needs_reschedule>0;
+    const ac=AVATAR_COLORS[idx%AVATAR_COLORS.length];
+    const fillColor=isDone?'#1D9E75':p>=70?'#378ADD':p>=40?'#EF9F27':'#E24B4A';
+    let badge='';
+    if(isDone) badge=`<span class="badge badge-done">🏆 Prize eligible</span>`;
+    else if(hasAlert) badge=`<span class="badge badge-alert">${r.needs_reschedule} to reschedule</span>`;
+    else if(p>=70) badge=`<span class="badge badge-progress">${p}% done</span>`;
+    else badge=`<span class="badge badge-warn">${r.not_scheduled} remaining</span>`;
+    return `<div class="rep-card${isDone?' done':hasAlert?' alert':''}" onclick="toggleCard('${r.name.replace(/'/g,"\\'")}')">
+      <div class="rep-top">
+        <div class="rep-avatar" style="background:${ac.bg};color:${ac.fg};">${initials(r.name)}</div>
+        <div class="rep-name">${r.name}</div>
+        ${badge}
+      </div>
+      <div class="prog-row">
+        <div class="prog-track"><div class="prog-fill" style="width:${p}%;background:${fillColor};"></div></div>
+        <div class="prog-label">${r.scheduled}/${r.total}</div>
+      </div>
+      <div class="stats-row">
+        <div class="stat-chip"><div class="val">${r.scheduled}</div><div class="lbl">scheduled</div></div>
+        <div class="stat-chip"><div class="val" style="color:${r.not_scheduled>0?'#A32D2D':'#888'}">${r.not_scheduled}</div><div class="lbl">not scheduled</div></div>
+        <div class="stat-chip"><div class="val" style="color:${r.needs_reschedule>0?'#854F0B':'#888'}">${r.needs_reschedule}</div><div class="lbl">reschedule</div></div>
+      </div>
+      ${renderWeeks(r)}
+    </div>`;
+  }).join('');
+}
+
+buildSummary();
+render();
+</script>
+</body>
+</html>
